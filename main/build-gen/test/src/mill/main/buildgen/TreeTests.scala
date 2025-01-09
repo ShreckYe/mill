@@ -1,4 +1,4 @@
-package mill.main.build
+package mill.main.buildgen
 
 import utest.*
 

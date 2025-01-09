@@ -557,6 +557,12 @@ trait MainModule extends BaseModule0 {
             Seq("mill.init.InitMavenModule/init") ++ args,
             SelectMode.Separated
           )
+        else if (os.exists(os.pwd / "settings.gradle") || os.exists(os.pwd / "settings.gradle.kts"))
+          RunScript.evaluateTasksNamed(
+            evaluator,
+            Seq("mill.init.InitGradleModule/init") ++ args,
+            SelectMode.Separated
+          )
         else if (args.headOption.exists(_.toLowerCase.endsWith(".g8")))
           RunScript.evaluateTasksNamed(
             evaluator,

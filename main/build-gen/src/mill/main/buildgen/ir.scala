@@ -1,4 +1,4 @@
-package mill.main.build
+package mill.main.buildgen
 
 import mill.main.client.CodeGenConstants.{nestedBuildFileNames, rootBuildFileNames, rootModuleAlias}
 import mill.runner.FileImportGraph.backtickWrap

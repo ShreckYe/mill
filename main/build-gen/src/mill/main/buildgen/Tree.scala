@@ -1,6 +1,6 @@
-package mill.main.build
+package mill.main.buildgen
 
-import mill.main.build.Tree.Traversal
+import mill.main.buildgen.Tree.Traversal
 
 import scala.collection.compat.Factory
 

@@ -1,7 +1,7 @@
 package mill.main.maven
 
 import mainargs.{Flag, ParserForClass, arg, main}
-import mill.main.build.{BuildObject, Node, Tree}
+import mill.main.buildgen.{BuildObject, CommonBuildGenConfig, Node, Tree}
 import mill.runner.FileImportGraph.backtickWrap
 import org.apache.maven.model.{Dependency, Model}
 
@@ -458,18 +458,15 @@ object BuildGen {
 @main
 @mill.api.internal
 case class BuildGenConfig(
-    @arg(doc = "name of generated base module trait defining project metadata settings")
-    baseModule: Option[String] = None,
-    @arg(doc = "name of generated nested test module")
-    testModule: String = "test",
-    @arg(doc = "name of generated companion object defining constants for dependencies")
-    depsObject: Option[String] = None,
+    override val baseModule: Option[String] = None,
+    override val testModule: String = "test",
+    override val depsObject: Option[String] = None,
+    // This message is different from the common one.
     @arg(doc = "capture properties defined in pom.xml for publishing")
-    publishProperties: Flag = Flag(),
-    @arg(doc = "merge build files generated for a multi-module build")
-    merge: Flag = Flag(),
+    override val publishProperties: Flag = Flag(),
+    override val merge: Flag = Flag(),
     @arg(doc = "use cache for Maven repository system")
     cacheRepository: Flag = Flag(),
     @arg(doc = "process Maven plugin executions and configurations")
     processPlugins: Flag = Flag()
-) extends ModelerConfig
+) extends CommonBuildGenConfig with ModelerConfig

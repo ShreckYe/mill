@@ -1,5 +1,6 @@
 package build.main
 // imports
+import coursier.maven.MavenRepository
 import mill._
 import mill.scalalib._
 import mill.contrib.buildinfo.BuildInfo
@@ -152,8 +153,13 @@ object `package` extends RootModule with build.MillStableScalaModule with BuildI
     def ivyDeps = Agg(build.Deps.jgraphtCore) ++ build.Deps.graphvizJava ++ build.Deps.javet
   }
 
-  object maven extends build.MillPublishScalaModule {
+  object `build-gen` extends build.MillPublishScalaModule {
     def moduleDeps = Seq(build.runner)
+  }
+
+  object maven extends build.MillPublishScalaModule {
+    def moduleDeps = Seq(`build-gen`)
+
     def ivyDeps = Agg(
       build.Deps.mavenEmbedder,
       build.Deps.mavenResolverConnectorBasic,
@@ -162,7 +168,27 @@ object `package` extends RootModule with build.MillStableScalaModule with BuildI
       build.Deps.mavenResolverTransportHttp,
       build.Deps.mavenResolverTransportWagon
     )
+
     def testModuleDeps = super.testModuleDeps ++ Seq(build.scalalib)
+  }
+
+  val gradleLibsReleases = Seq(MavenRepository("https://repo.gradle.org/gradle/libs-releases"))
+
+  object gradle extends build.MillPublishScalaModule {
+    def moduleDeps = Seq(`build-gen`)
+
+    def ivyDeps = Agg(
+      build.Deps.gradleToolingApi,
+      /*
+      needed for gradle-tooling-api
+      see https://docs.gradle.org/current/userguide/third_party_integration.html#sec:embedding_quickstart
+       */
+      build.Deps.slf4jSimple
+    )
+
+    override def repositoriesTask = Task.Anon {
+      super.repositoriesTask() ++ gradleLibsReleases
+    }
   }
 
   def testModuleDeps = super.testModuleDeps ++ Seq(build.testkit)
