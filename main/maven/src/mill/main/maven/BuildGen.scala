@@ -1,9 +1,10 @@
 package mill.main.maven
 
 import mainargs.{Flag, ParserForClass, arg, main}
-import mill.main.buildgen.{BuildObject, CommonBuildGenConfig, Node, Tree}
+import mill.main.buildgen.*
 import mill.runner.FileImportGraph.backtickWrap
 import org.apache.maven.model.{Dependency, Model}
+import os.Path
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.jdk.CollectionConverters.*
@@ -36,7 +37,7 @@ import scala.jdk.CollectionConverters.*
  *  - build profiles
  */
 @mill.api.internal
-object BuildGen {
+object BuildGen extends CommonBuildGen[BuildGenConfig] {
 
   def main(args: Array[String]): Unit = {
     val cfg = ParserForClass[BuildGenConfig].constructOrExit(args.toSeq)
@@ -44,19 +45,26 @@ object BuildGen {
   }
 
   private type MavenNode = Node[Model]
-  private type MillNode = Node[BuildObject]
 
-  private def run(cfg: BuildGenConfig): Unit = {
-    val workspace = os.pwd
+  def originalBuildToolName = "Maven"
 
-    println("converting Maven build")
+  def generateMillNodeTree(workspace: Path, cfg: BuildGenConfig): Tree[MillNode] = {
     val modeler = Modeler(cfg)
     val input = Tree.from(Seq.empty[String]) { dirs =>
       val model = modeler(workspace / dirs)
       (Node(dirs, model), model.getModules.iterator().asScala.map(dirs :+ _))
     }
 
-    var output = convert(input, cfg)
+    convert(input, cfg)
+  }
+
+  private def run(cfg: BuildGenConfig): Unit = {
+    val workspace = os.pwd
+
+    println(s"converting $originalBuildToolName build")
+
+    var output: Tree[MillNode] = generateMillNodeTree(workspace, cfg)
+
     if (cfg.merge.value) {
       println("compacting Mill build tree")
       output = output.merge
@@ -77,7 +85,7 @@ object BuildGen {
       os.write(workspace / file, source)
     }
 
-    println("converted Maven build to Mill")
+    println(s"converted $originalBuildToolName build to Mill")
   }
 
   private def convert(input: Tree[MavenNode], cfg: BuildGenConfig): Tree[MillNode] = {

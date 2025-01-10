@@ -2,6 +2,7 @@ package mill.main.buildgen
 
 import mainargs.{Flag, arg}
 
+@mill.api.internal
 trait CommonBuildGenConfig {
   @arg(doc = "name of generated base module trait defining project metadata settings")
   def baseModule: Option[String] = None

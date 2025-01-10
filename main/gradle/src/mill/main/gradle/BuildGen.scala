@@ -1,12 +1,15 @@
 package mill.main.gradle
 
 import mainargs.{Flag, ParserForClass, arg, main}
-import mill.main.buildgen.CommonBuildGenConfig
-import org.gradle.tooling.GradleConnector
-import org.gradle.tooling.model.gradle.GradleBuild
+import mill.main.buildgen.*
+import org.gradle.tooling.model.gradle.ProjectPublications
+import org.gradle.tooling.model.idea.IdeaProject
+import org.gradle.tooling.{GradleConnector, ProjectConnection}
+import os.Path
 
 import java.io.File
 import java.net.URI
+import scala.jdk.CollectionConverters.IterableHasAsScala
 
 /**
  * Converts a Gradle build to Mill by generating Mill build file(s) with the Gradle Tooling API.
@@ -35,13 +38,15 @@ import java.net.URI
  *  - build profiles TODO check this
  */
 @mill.api.internal
-object BuildGen {
+object BuildGen extends CommonBuildGen[BuildGenConfig] {
   def main(args: Array[String]): Unit = {
     val config = ParserForClass[BuildGenConfig].constructOrExit(args.toSeq)
     run(config)
   }
 
-  private def run(config: BuildGenConfig): Unit = {
+  override def originalBuildToolName = "Gradle"
+
+  override def generateMillNodeTree(workspace: Path, config: BuildGenConfig): Tree[MillNode] = {
     val newConnector = GradleConnector.newConnector()
 
     val connector1 = config.useInstallation.fold(newConnector)(newConnector.useInstallation)
@@ -52,12 +57,37 @@ object BuildGen {
     val connector = config.useGradleUserHomeDir.fold(connector4)(connector4.useGradleUserHomeDir)
 
     val connection = connector.connect()
+    try {
+      connection.action({ controller =>
+        /*
+        val gradleBuild = controller.getModel(classOf[GradleBuild])
+        val rootProject = gradleBuild.getRootProject
+        val gradleProject = controller.getModel(classOf[GradleProject])
+         */
+        val ideaProject = controller.getModel(classOf[IdeaProject])
+        ideaProject.getModules.asScala.map({ ideaModule =>
+          val dependencies = ideaModule.getDependencies
+          val publications = controller.getModel(ideaModule, classOf[ProjectPublications])
+        })
+        ???
+      }).run()
 
-    val gradleBuild = connection.getModel(classOf[GradleBuild])
+      // get the javac options from a task
+      connection.newBuild().forTasks(???)
 
-    gradleBuild.getRootProject
+      ???
+    } finally {
+      connection.close()
+    }
+  }
 
-    // TODO
+  // TODO remove
+  private def run(config: BuildGenConfig): Unit = {
+    ???
+  }
+  // TODO remove
+  private def convert(connection: ProjectConnection, config: BuildGenConfig): Tree[MillNode] = {
+    ???
   }
 }
 
