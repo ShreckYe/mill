@@ -175,7 +175,7 @@ object `package` extends RootModule with build.MillStableScalaModule with BuildI
   val gradleLibsReleases = Seq(MavenRepository("https://repo.gradle.org/gradle/libs-releases"))
 
   object gradle extends build.MillPublishScalaModule {
-    def moduleDeps = Seq(`build-gen`)
+    def moduleDeps = Seq(maven) // depend on the maven module to use `CommonMavenPomBuildGen`
 
     def ivyDeps = Agg(
       build.Deps.gradleToolingApi,

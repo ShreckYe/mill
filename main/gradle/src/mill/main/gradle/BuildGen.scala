@@ -1,15 +1,17 @@
 package mill.main.gradle
 
-import mainargs.{Flag, ParserForClass, arg, main}
+import mainargs.{Flag, arg, main}
 import mill.main.buildgen.*
-import org.gradle.tooling.model.gradle.ProjectPublications
-import org.gradle.tooling.model.idea.IdeaProject
-import org.gradle.tooling.{GradleConnector, ProjectConnection}
+import mill.main.maven.CommonMavenPomBuildGen
+import org.apache.commons.lang3.StringUtils
+import org.gradle.tooling.GradleConnector
+import org.gradle.tooling.model.{GradleProject, GradleTask}
 import os.Path
 
 import java.io.File
 import java.net.URI
-import scala.jdk.CollectionConverters.IterableHasAsScala
+import scala.jdk.CollectionConverters.{IterableHasAsJava, IterableHasAsScala}
+import scala.reflect.io.Path.jfile2path
 
 /**
  * Converts a Gradle build to Mill by generating Mill build file(s) with the Gradle Tooling API.
@@ -38,15 +40,14 @@ import scala.jdk.CollectionConverters.IterableHasAsScala
  *  - build profiles TODO check this
  */
 @mill.api.internal
-object BuildGen extends CommonBuildGen[BuildGenConfig] {
-  def main(args: Array[String]): Unit = {
-    val config = ParserForClass[BuildGenConfig].constructOrExit(args.toSeq)
-    run(config)
-  }
-
+object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
   override def originalBuildToolName = "Gradle"
 
-  override def generateMillNodeTree(workspace: Path, config: BuildGenConfig): Tree[MillNode] = {
+  private val fallbackGeneratePomFileTaskName =
+    "generatePomFileForFallbackMavenForMillInitPublication"
+  private val generatePomFileTaskNamePattern = "generatePomFileFor(.+)Publication".r
+
+  override def getMavenNodeTree(workspace: Path, config: BuildGenConfig): Tree[MavenNode] = {
     val newConnector = GradleConnector.newConnector()
 
     val connector1 = config.useInstallation.fold(newConnector)(newConnector.useInstallation)
@@ -58,36 +59,56 @@ object BuildGen extends CommonBuildGen[BuildGenConfig] {
 
     val connection = connector.connect()
     try {
-      connection.action({ controller =>
-        /*
-        val gradleBuild = controller.getModel(classOf[GradleBuild])
-        val rootProject = gradleBuild.getRootProject
-        val gradleProject = controller.getModel(classOf[GradleProject])
-         */
-        val ideaProject = controller.getModel(classOf[IdeaProject])
-        ideaProject.getModules.asScala.map({ ideaModule =>
-          val dependencies = ideaModule.getDependencies
-          val publications = controller.getModel(ideaModule, classOf[ProjectPublications])
-        })
-        ???
-      }).run()
+      val project = connection.getModel(classOf[GradleProject])
+      val projectAndTaskTree = Tree.from(project)(step =>
+        (
+          (
+            step, {
+              val generatePomFileTasks = step.getTasks.asScala.to(LazyList)
+                .filter(task => generatePomFileTaskNamePattern.matches(task.getName))
 
-      // get the javac options from a task
-      connection.newBuild().forTasks(???)
+              val (fallbackTasks, nonFallbackTasks) =
+                generatePomFileTasks.partition(_.getName == fallbackGeneratePomFileTaskName)
 
-      ???
+              config.mavenPublicationName
+                .fold(nonFallbackTasks.headOption)(name =>
+                  nonFallbackTasks.find(
+                    _.getName == s"generatePomFileFor${name.capitalize}Publication"
+                  )
+                )
+                .getOrElse(fallbackTasks.head)
+            }
+          ),
+          step.getChildren.asScala
+        )
+      )
+
+      connection.newBuild()
+        .withArguments(
+          "--init-script",
+          getClass.getResource("init.gradle.kts").toString
+        ) // TODO this might not work
+        .forTasks(projectAndTaskTree.to[Iterable[(GradleProject, GradleTask)]].map(_._2).asJava)
+        .run()
+
+      projectAndTaskTree.map({
+        case (project, task) =>
+          val generatePomFileTaskNamePattern(capitalizedPublicationName) = task.getName
+          val possiblePublicationNames =
+            Seq(StringUtils.uncapitalize(capitalizedPublicationName), capitalizedPublicationName)
+          /* There is a niche case not handled here that the specified publication name in the config is capitalized,
+          but the actual one defined is uncapitalized. */
+          val pomFile = possiblePublicationNames.map(
+            project.getBuildDirectory / "publications" / _ / "pom-default.xml"
+          )
+            .find(_.exists)
+            .get
+
+          Node(os.Path(project.getProjectDirectory).relativeTo(workspace).segments, pomFile)
+      })
     } finally {
       connection.close()
     }
-  }
-
-  // TODO remove
-  private def run(config: BuildGenConfig): Unit = {
-    ???
-  }
-  // TODO remove
-  private def convert(connection: ProjectConnection, config: BuildGenConfig): Tree[MillNode] = {
-    ???
   }
 }
 
@@ -120,5 +141,13 @@ case class BuildGenConfig(
      * @see [[GradleConnector.useGradleUserHomeDir]]
      */
     @arg(doc = "the user's Gradle home directory to use in the `GradleConnector`")
-    useGradleUserHomeDir: Option[File]
-) extends CommonBuildGenConfig
+    useGradleUserHomeDir: Option[File],
+    @arg(doc =
+      "the Maven publication name (set with the `maven-publish` Gradle plugin) to generate the Maven pom.xml to init the Mill project with\n" +
+        "You can specify this if there are multiple Maven publications for a project. " +
+        "If you do not specify this argument, the first Maven publication will be used. " +
+        "If there are no defined Maven publications in the Gradle project, an added default one with no metadata will be used. " +
+        "If a publication name is specified but none is found, it fallbacks to the default behavior with this value unspecified."
+    )
+    mavenPublicationName: Option[String] = None
+) extends mill.main.maven.BuildGenConfig
