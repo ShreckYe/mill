@@ -43,20 +43,3 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
     }
   }
 }
-
-// TODO move to `CommonMavenPomBuildGen.scala`?
-@main
-@mill.api.internal
-case class BuildGenConfig(
-    override val baseModule: Option[String] = None,
-    override val testModule: String = "test",
-    override val depsObject: Option[String] = None,
-    // This message is different from the common one.
-    @arg(doc = "capture properties defined in pom.xml for publishing")
-    override val publishProperties: Flag = Flag(),
-    override val merge: Flag = Flag(),
-    @arg(doc = "use cache for Maven repository system")
-    cacheRepository: Flag = Flag(),
-    @arg(doc = "process Maven plugin executions and configurations")
-    processPlugins: Flag = Flag()
-) extends CommonBuildGenConfig with ModelerConfig

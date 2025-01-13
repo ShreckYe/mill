@@ -169,7 +169,7 @@ object `package` extends RootModule with build.MillStableScalaModule with BuildI
       build.Deps.mavenResolverTransportWagon
     )
 
-    def testModuleDeps = super.testModuleDeps ++ Seq(build.scalalib)
+    def testModuleDeps = super.testModuleDeps ++ Seq(`build-gen`.test)
   }
 
   val gradleLibsReleases = Seq(MavenRepository("https://repo.gradle.org/gradle/libs-releases"))
@@ -189,6 +189,8 @@ object `package` extends RootModule with build.MillStableScalaModule with BuildI
     override def repositoriesTask = Task.Anon {
       super.repositoriesTask() ++ gradleLibsReleases
     }
+
+    def testModuleDeps = super.testModuleDeps ++ Seq(`build-gen`.test)
   }
 
   def testModuleDeps = super.testModuleDeps ++ Seq(build.testkit)

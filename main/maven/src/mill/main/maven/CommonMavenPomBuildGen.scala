@@ -1,6 +1,7 @@
 package mill.main.maven
 
-import mill.main.buildgen.{BuildObject, CommonBuildGen, Node, Tree}
+import mainargs.{Flag, arg, main}
+import mill.main.buildgen.*
 import mill.runner.FileImportGraph.backtickWrap
 import org.apache.maven.model.{Dependency, Model}
 import os.Path
@@ -397,3 +398,20 @@ trait CommonMavenPomBuildGen[Config <: BuildGenConfig] extends CommonBuildGen[Co
         .mkString(s"override def resources = Task.Sources { super.resources() ++ Seq(", ", ", ") }")
   }
 }
+
+// TODO add back a subclass in `BuildGen.scala`?
+@main
+@mill.api.internal
+case class BuildGenConfig(
+    override val baseModule: Option[String] = None,
+    override val testModule: String = "test",
+    override val depsObject: Option[String] = None,
+    // This message is different from the common one.
+    @arg(doc = "capture properties defined in pom.xml for publishing")
+    override val publishProperties: Flag = Flag(),
+    override val merge: Flag = Flag(),
+    @arg(doc = "use cache for Maven repository system")
+    cacheRepository: Flag = Flag(),
+    @arg(doc = "process Maven plugin executions and configurations")
+    processPlugins: Flag = Flag()
+) extends CommonBuildGenConfig with ModelerConfig
