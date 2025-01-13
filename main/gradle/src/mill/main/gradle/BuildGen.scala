@@ -4,8 +4,8 @@ import mainargs.{Flag, ParserForClass, arg, main}
 import mill.main.buildgen.*
 import mill.main.maven.{CommonMavenPomBuildGen, Modeler}
 import org.apache.commons.lang3.StringUtils
-import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.model.{GradleProject, GradleTask}
+import org.gradle.tooling.{ConfigurableLauncher, GradleConnector}
 import os.Path
 
 import scala.jdk.CollectionConverters.{IterableHasAsJava, IterableHasAsScala}
@@ -64,14 +64,18 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
     val connection = connector.forProjectDirectory(workspace.toIO).connect()
     println("connected")
     try {
-      def newBuildWithInitScript =
-        connection.newBuild().withArguments(
-          "--init-script",
-          getClass.getResource("init.gradle.kts").toString // TODO this might not work when built into a jar
-        )
-      newBuildWithInitScript.run()
+      implicit class ConfigurableLauncherExt[T <: ConfigurableLauncher[T]](
+          val configurableLauncher: ConfigurableLauncher[T]
+      ) {
+        def withInitScriptArguments: T =
+          configurableLauncher.withArguments(
+            "--init-script",
+            // TODO this might not work when built into a jar
+            getClass.getResource("init.gradle.kts").toString
+          )
+      }
 
-      val project = connection.getModel(classOf[GradleProject])
+      val project = connection.model(classOf[GradleProject]).withInitScriptArguments.get()
       val projectAndTaskTree = Tree.from(project)(step =>
         (
           (
@@ -98,7 +102,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
 
       println("running \"generatePomFile\" tasks with a custom init script")
 
-      newBuildWithInitScript
+      connection.newBuild().withInitScriptArguments
         .forTasks(projectAndTaskTree.to[Iterable[(GradleProject, GradleTask)]].map(_._2).asJava)
         .run()
 
@@ -161,7 +165,7 @@ case class BuildGenConfig(
     useGradleUserHomeDir: Option[File],
      */
     @arg(doc =
-      "the Maven publication name (set with the `maven-publish` Gradle plugin) to generate the Maven pom.xml to init the Mill project with\n" +
+      "the Maven publication name (set with the `maven-publish` Gradle plugin) to generate the Maven POM file to init the Mill project with\n" +
         "You can specify this if there are multiple Maven publications for a project. " +
         "If you do not specify this argument, the first Maven publication will be used. " +
         "If there are no defined Maven publications in the Gradle project, an added default one with no metadata will be used. " +

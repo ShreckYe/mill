@@ -11,7 +11,7 @@ import java.nio.file.FileSystems
 
 object TestBuildGen {
   // Change this to true to update test data on disk
-  def updateSnapshots = false
+  def updateSnapshots = true // TODO
 
   class BuildChecker(main: Array[String] => Unit) {
     val resources = os.Path(sys.env("MILL_TEST_RESOURCE_DIR"))

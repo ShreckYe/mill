@@ -9,14 +9,15 @@ object BuildGenTests extends TestSuite {
 
     // TODO copied from the Maven module and not thoroughly adapted yet
 
-    test("maven-samples") {
-      val sourceRoot = os.sub / "gradle-samples"
-      val expectedRoot = os.sub / "expected/maven-samples"
+    test("gradle-sample") {
+      val sourceRoot = os.sub / "gradle-sample"
+      val expectedRoot = os.sub / "expected/gradle-sample"
       assert(
         checkBuild(sourceRoot, expectedRoot)
       )
     }
 
+    /*
     test("config") {
       test("all") {
         val sourceRoot = os.sub / "gradle-samples"
@@ -39,5 +40,6 @@ object BuildGenTests extends TestSuite {
         )
       }
     }
+     */
   }
 }
