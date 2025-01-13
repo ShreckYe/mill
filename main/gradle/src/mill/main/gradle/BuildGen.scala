@@ -1,6 +1,6 @@
 package mill.main.gradle
 
-import mainargs.{Flag, arg, main}
+import mainargs.{Flag, ParserForClass, arg, main}
 import mill.main.buildgen.*
 import mill.main.maven.CommonMavenPomBuildGen
 import org.apache.commons.lang3.StringUtils
@@ -41,6 +41,8 @@ import scala.reflect.io.Path.jfile2path
  */
 @mill.api.internal
 object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
+  override def configParser = ParserForClass[BuildGenConfig]
+
   override def originalBuildToolName = "Gradle"
 
   private val fallbackGeneratePomFileTaskName =

@@ -1,6 +1,6 @@
 package mill.main.maven
 
-import mainargs.{Flag, arg, main}
+import mainargs.ParserForClass
 import mill.main.buildgen.*
 import os.Path
 
@@ -35,6 +35,7 @@ import scala.jdk.CollectionConverters.*
  */
 @mill.api.internal
 object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
+  override def configParser = ParserForClass[BuildGenConfig]
   override def getMavenNodeTree(workspace: Path, cfg: BuildGenConfig) = {
     val modeler = Modeler(cfg)
     Tree.from(Seq.empty[String]) { dirs =>

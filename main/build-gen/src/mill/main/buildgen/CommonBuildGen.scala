@@ -7,8 +7,10 @@ import os.Path
 trait CommonBuildGen[Config <: CommonBuildGenConfig] {
   // TODO make members protected?
 
-  def main(args: Array[String]): Unit = {
-    val cfg = ParserForClass[Config].constructOrExit(args.toSeq)
+  def configParser : ParserForClass[Config]
+
+  def main(args: Array[String]): Unit =  {
+    val cfg = configParser.constructOrExit(args.toSeq)
     run(cfg)
   }
 
