@@ -1,9 +1,7 @@
-allprojctes {
-    plugins {
-        `maven-publish`
-    }
+allprojects {
+    apply("maven-publish")
 
-    publishing {
+    extensions.configure<PublishingExtension>("publishing") {
         publications {
             create<MavenPublication>("fallbackMavenForMillInit") {
                 from(components["java"])
