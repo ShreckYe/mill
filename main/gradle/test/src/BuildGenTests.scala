@@ -1,5 +1,5 @@
 import mill.main.buildgen.TestBuildGen
-import mill.main.maven.BuildGen
+import mill.main.gradle.BuildGen
 import utest.{TestSuite, Tests, assert, test}
 
 object BuildGenTests extends TestSuite {
