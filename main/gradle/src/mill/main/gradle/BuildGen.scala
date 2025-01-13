@@ -2,7 +2,7 @@ package mill.main.gradle
 
 import mainargs.{Flag, ParserForClass, arg, main}
 import mill.main.buildgen.*
-import mill.main.maven.CommonMavenPomBuildGen
+import mill.main.maven.{CommonMavenPomBuildGen, Modeler}
 import org.apache.commons.lang3.StringUtils
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.model.{GradleProject, GradleTask}
@@ -93,6 +93,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
         .forTasks(projectAndTaskTree.to[Iterable[(GradleProject, GradleTask)]].map(_._2).asJava)
         .run()
 
+      val modeler = Modeler(config)
       projectAndTaskTree.map({
         case (project, task) =>
           val generatePomFileTaskNamePattern(capitalizedPublicationName) = task.getName
@@ -100,13 +101,16 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
             Seq(StringUtils.uncapitalize(capitalizedPublicationName), capitalizedPublicationName)
           /* There is a niche case not handled here that the specified publication name in the config is capitalized,
           but the actual one defined is uncapitalized. */
-          val pomFile = possiblePublicationNames.map(
+          val pomPath = possiblePublicationNames.map(
             project.getBuildDirectory / "publications" / _ / "pom-default.xml"
           )
             .find(_.exists)
             .get
 
-          Node(os.Path(project.getProjectDirectory).relativeTo(workspace).segments, pomFile)
+          Node(
+            os.Path(project.getProjectDirectory).relativeTo(workspace).segments,
+            modeler.build(pomPath.jfile)
+          )
       })
     } finally {
       connection.close()
