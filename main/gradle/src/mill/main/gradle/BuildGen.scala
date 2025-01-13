@@ -1,6 +1,6 @@
 package mill.main.gradle
 
-import mainargs.{ParserForClass, arg, main}
+import mainargs.{Flag, ParserForClass, arg, main}
 import mill.main.buildgen.*
 import mill.main.maven.{CommonMavenPomBuildGen, Modeler}
 import org.apache.commons.lang3.StringUtils
@@ -158,5 +158,12 @@ case class BuildGenConfig(
         "If there are no defined Maven publications in the Gradle project, an added default one with no metadata will be used. " +
         "If a publication name is specified but none is found, it fallbacks to the default behavior with this value unspecified."
     )
-    mavenPublicationName: Option[String] = None
-) extends mill.main.maven.BuildGenConfig
+    mavenPublicationName: Option[String] = None,
+    override val baseModule: Option[String] = None,
+    override val testModule: String = "test",
+    override val depsObject: Option[String] = None,
+    override val publishProperties: Flag = Flag(),
+    override val merge: Flag = Flag(),
+    override val cacheRepository: Flag = Flag(),
+    override val processPlugins: Flag = Flag()
+) extends mill.main.maven.CommonMavenPomBuildGenConfig

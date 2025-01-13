@@ -1,6 +1,6 @@
 package mill.main.maven
 
-import mainargs.ParserForClass
+import mainargs.{Flag, ParserForClass, main}
 import mill.main.buildgen.*
 import os.Path
 
@@ -44,3 +44,14 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
     }
   }
 }
+@main
+@mill.api.internal
+case class BuildGenConfig(
+    override val baseModule: Option[String] = None,
+    override val testModule: String = "test",
+    override val depsObject: Option[String] = None,
+    override val publishProperties: Flag = Flag(),
+    override val merge: Flag = Flag(),
+    override val cacheRepository: Flag = Flag(),
+    override val processPlugins: Flag = Flag()
+) extends CommonMavenPomBuildGenConfig

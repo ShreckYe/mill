@@ -1,6 +1,6 @@
 package mill.main.maven
 
-import mainargs.{Flag, arg, main}
+import mainargs.{Flag, arg}
 import mill.main.buildgen.*
 import mill.runner.FileImportGraph.backtickWrap
 import org.apache.maven.model.{Dependency, Model}
@@ -9,7 +9,8 @@ import os.Path
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.jdk.CollectionConverters.*
 
-trait CommonMavenPomBuildGen[Config <: BuildGenConfig] extends CommonBuildGen[Config] {
+trait CommonMavenPomBuildGen[Config <: CommonMavenPomBuildGenConfig]
+    extends CommonBuildGen[Config] {
   // TODO make public members protected?
 
   type MavenNode = Node[Model]
@@ -399,19 +400,13 @@ trait CommonMavenPomBuildGen[Config <: BuildGenConfig] extends CommonBuildGen[Co
   }
 }
 
-// TODO add back a subclass in `BuildGen.scala`?
-@main
 @mill.api.internal
-case class BuildGenConfig(
-    override val baseModule: Option[String] = None,
-    override val testModule: String = "test",
-    override val depsObject: Option[String] = None,
-    // This message is different from the common one.
-    @arg(doc = "capture properties defined in pom.xml for publishing")
-    override val publishProperties: Flag = Flag(),
-    override val merge: Flag = Flag(),
-    @arg(doc = "use cache for Maven repository system")
-    cacheRepository: Flag = Flag(),
-    @arg(doc = "process Maven plugin executions and configurations")
-    processPlugins: Flag = Flag()
-) extends CommonBuildGenConfig with ModelerConfig
+trait CommonMavenPomBuildGenConfig extends CommonBuildGenConfig with ModelerConfig {
+  // This message is different from the common one.
+  @arg(doc = "capture properties defined in pom.xml for publishing")
+  override def publishProperties: Flag
+  @arg(doc = "use cache for Maven repository system")
+  override def cacheRepository: Flag
+  @arg(doc = "process Maven plugin executions and configurations")
+  override def processPlugins: Flag
+}
