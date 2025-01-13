@@ -67,7 +67,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
       def newBuildWithInitScript =
         connection.newBuild().withArguments(
           "--init-script",
-          getClass.getResource("init.gradle.kts").toString // TODO this does not work
+          getClass.getResource("init.gradle.kts").toString // TODO this might not work when built into a jar
         )
       newBuildWithInitScript.run()
 
