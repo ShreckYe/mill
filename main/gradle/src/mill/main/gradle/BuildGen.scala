@@ -60,7 +60,9 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
      */
     val connector = GradleConnector.newConnector()
 
+    println("connecting to the Gradle project")
     val connection = connector.forProjectDirectory(workspace.toIO).connect()
+    println("connected")
     try {
       val project = connection.getModel(classOf[GradleProject])
       val projectAndTaskTree = Tree.from(project)(step =>
@@ -85,7 +87,9 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
           step.getChildren.asScala
         )
       )
+      println(s"subprojects and their \"generatePomFile\" tasks retrieved: $projectAndTaskTree")
 
+      println("running \"generatePomFile\" tasks with a custom init script")
       connection.newBuild()
         .withArguments(
           "--init-script",
@@ -94,6 +98,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
         .forTasks(projectAndTaskTree.to[Iterable[(GradleProject, GradleTask)]].map(_._2).asJava)
         .run()
 
+      println("feeding the generated POM files to Maven POM build generation")
       val modeler = Modeler(config)
       projectAndTaskTree.map({
         case (project, task) =>
