@@ -60,7 +60,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
      */
     val connector = GradleConnector.newConnector()
 
-    val connection = connector.connect()
+    val connection = connector.forProjectDirectory(workspace.toIO).connect()
     try {
       val project = connection.getModel(classOf[GradleProject])
       val projectAndTaskTree = Tree.from(project)(step =>
