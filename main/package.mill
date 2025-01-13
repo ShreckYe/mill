@@ -179,11 +179,8 @@ object `package` extends RootModule with build.MillStableScalaModule with BuildI
 
     def ivyDeps = Agg(
       build.Deps.gradleToolingApi,
-      /*
-      needed for gradle-tooling-api
-      see https://docs.gradle.org/current/userguide/third_party_integration.html#sec:embedding_quickstart
-       */
-      build.Deps.slf4jSimple
+      // see https://docs.gradle.org/current/userguide/third_party_integration.html#sec:embedding_quickstart
+      //build.Deps.slf4jSimple // not needed as there is already a logback provider
     )
 
     override def repositoriesTask = Task.Anon {
