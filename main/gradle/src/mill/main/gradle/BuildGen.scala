@@ -1,6 +1,6 @@
 package mill.main.gradle
 
-import mainargs.{Flag, ParserForClass, arg, main}
+import mainargs.{ParserForClass, arg, main}
 import mill.main.buildgen.*
 import mill.main.maven.{CommonMavenPomBuildGen, Modeler}
 import org.apache.commons.lang3.StringUtils
@@ -8,8 +8,6 @@ import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.model.{GradleProject, GradleTask}
 import os.Path
 
-import java.io.File
-import java.net.URI
 import scala.jdk.CollectionConverters.{IterableHasAsJava, IterableHasAsScala}
 import scala.reflect.io.Path.jfile2path
 
@@ -50,6 +48,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
   private val generatePomFileTaskNamePattern = "generatePomFileFor(.+)Publication".r
 
   override def getMavenNodeTree(workspace: Path, config: BuildGenConfig): Tree[MavenNode] = {
+    /*
     val newConnector = GradleConnector.newConnector()
 
     val connector1 = config.useInstallation.fold(newConnector)(newConnector.useInstallation)
@@ -58,6 +57,8 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
     val connector4 =
       if (config.useBuildDistribution.value) connector3.useBuildDistribution() else connector3
     val connector = config.useGradleUserHomeDir.fold(connector4)(connector4.useGradleUserHomeDir)
+     */
+    val connector = GradleConnector.newConnector()
 
     val connection = connector.connect()
     try {
@@ -121,6 +122,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
 @main
 @mill.api.internal
 case class BuildGenConfig(
+    /*
     /**
      * @see [[GradleConnector.useInstallation]]
      */
@@ -148,6 +150,7 @@ case class BuildGenConfig(
      */
     @arg(doc = "the user's Gradle home directory to use in the `GradleConnector`")
     useGradleUserHomeDir: Option[File],
+     */
     @arg(doc =
       "the Maven publication name (set with the `maven-publish` Gradle plugin) to generate the Maven pom.xml to init the Mill project with\n" +
         "You can specify this if there are multiple Maven publications for a project. " +
