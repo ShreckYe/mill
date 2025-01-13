@@ -64,6 +64,13 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
     val connection = connector.forProjectDirectory(workspace.toIO).connect()
     println("connected")
     try {
+      def newBuildWithInitScript =
+        connection.newBuild().withArguments(
+          "--init-script",
+          getClass.getResource("init.gradle.kts").toString // TODO this does not work
+        )
+      newBuildWithInitScript.run()
+
       val project = connection.getModel(classOf[GradleProject])
       val projectAndTaskTree = Tree.from(project)(step =>
         (
@@ -90,11 +97,8 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
       println(s"subprojects and their \"generatePomFile\" tasks retrieved: $projectAndTaskTree")
 
       println("running \"generatePomFile\" tasks with a custom init script")
-      connection.newBuild()
-        .withArguments(
-          "--init-script",
-          getClass.getResource("init.gradle.kts").toString
-        ) // TODO this might not work
+
+      newBuildWithInitScript
         .forTasks(projectAndTaskTree.to[Iterable[(GradleProject, GradleTask)]].map(_._2).asJava)
         .run()
 
