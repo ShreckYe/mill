@@ -1,11 +1,15 @@
 package mill.main.maven
 
 import mill.main.buildgen.TestBuildGen
+import os.Path
 import utest.*
 
-object BuildGenTests extends TestSuite {
+object BuildGenTests extends TestSuite with TestBuildGen {
+  override def buildFilesSkip(root: Path, path: Path): Boolean =
+    (root / "out").equals(path)
+
   def tests: Tests = Tests {
-    val buildChecker = new TestBuildGen.BuildChecker(BuildGen.main)
+    val buildChecker = new BuildChecker(BuildGen.main)
     import buildChecker.checkBuild
 
     // multi level nested modules

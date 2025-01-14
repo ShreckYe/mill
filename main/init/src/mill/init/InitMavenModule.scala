@@ -1,7 +1,7 @@
 package mill.init
 
-import mill.T
-import mill.define.{Discover, ExternalModule, TaskModule}
+import mill.define.{Discover, ExternalModule}
+import mill.{T, TaskModule}
 
 // TODO rename to `InitFromMavenModule`?
 

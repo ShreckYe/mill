@@ -5,11 +5,12 @@ import mill.api.PathRef
 import mill.main.client.OutFiles
 import mill.scalalib.scalafmt.ScalafmtModule
 import mill.testkit.{TestBaseModule, UnitTester}
+import os.Path
 import utest.framework.TestPath
 
 import java.nio.file.FileSystems
 
-object TestBuildGen {
+trait TestBuildGen {
   // Change this to true to update test data on disk
   def updateSnapshots = true // TODO
 
@@ -43,8 +44,10 @@ object TestBuildGen {
     }
   }
 
+  def buildFilesSkip(root: Path, path: Path): Boolean
+
   def buildFiles(root: os.Path): Seq[PathRef] =
-    os.walk.stream(root, skip = (root / "out").equals)
+    os.walk.stream(root, skip = buildFilesSkip(root, _))
       .filter(_.ext == "mill")
       .map(PathRef(_))
       .toSeq

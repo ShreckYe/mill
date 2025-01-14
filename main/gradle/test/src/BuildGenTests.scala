@@ -1,10 +1,17 @@
 import mill.main.buildgen.TestBuildGen
 import mill.main.gradle.BuildGen
+import os.Path
 import utest.{TestSuite, Tests, assert, test}
 
-object BuildGenTests extends TestSuite {
+object BuildGenTests extends TestSuite with TestBuildGen {
+  override def buildFilesSkip(root: Path, path: Path): Boolean = {
+    val lastSeg = path.last
+    (lastSeg == ".gradle" || lastSeg == ".kotlin.sessions") ||
+    (lastSeg == "build" && !path.relativeTo(root).segments.contains("src"))
+  }
+
   override def tests: Tests = Tests {
-    val buildChecker = new TestBuildGen.BuildChecker(BuildGen.main)
+    val buildChecker = new BuildChecker(BuildGen.main)
     import buildChecker.checkBuild
 
     // TODO copied from the Maven module and not thoroughly adapted yet
