@@ -1,0 +1,49 @@
+package build
+
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+
+object Deps {
+
+  val `org.apache.commons:commons-text` =
+    ivy"org.apache.commons:commons-text:1.12.0"
+}
+
+object `package` extends RootModule with MyModule {
+
+  override def artifactName = "gradle-sample"
+
+  override def pomPackagingType = PackagingType.Pom
+
+  object app extends MyModule {
+
+    override def runIvyDeps = Agg(Deps.`org.apache.commons:commons-text`)
+
+    override def runModuleDeps = Seq(build.utilities)
+
+  }
+
+  object list extends MyModule {}
+
+  object utilities extends MyModule {
+
+    override def moduleDeps = Seq(build.list)
+
+  }
+}
+
+trait MyModule extends PublishModule with MavenModule {
+
+  override def pomSettings = PomSettings(
+    "",
+    "dummy.group.from.mill.init.from.gradle",
+    "",
+    Seq(),
+    VersionControl(),
+    Seq()
+  )
+
+  override def publishVersion = "unspecified"
+
+}
