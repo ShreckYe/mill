@@ -4,4 +4,11 @@ plugins {
 
 dependencies {
     api(project(":list"))
+    api(project(":utilities:deeply-nested"))
+
+    testImplementation("org.testng:testng:7.10.2")
+}
+
+tasks.named<Test>("test") {
+    useTestNG()
 }

@@ -19,23 +19,23 @@ import scala.reflect.io.Path.jfile2path
  * ===Capabilities===
  * The conversion
  *  - handles deeply nested modules
- *  - captures project metadata TODO check this
+ *  - captures project Maven publication metadata
  *  - configures dependencies for configurations for both the main and test source sets:
- *    - implementation, api (replacements for deprecated `compile`)
- *    - compileOnly
- *    - runtimeOnly
+ *    - `implementation` and `api` (replacements for the deprecated `compile`), similar to Maven's `compile`
+ *    - `compileOnly`, similar to Maven's `provided`
+ *    - `runtimeOnly`, similar to Maven's `runtime`
  *  - configures testing frameworks:
  *    - JUnit 4
  *    - JUnit 5
  *    - TestNG
  *  - configures multiple, main and test, resource directories
+ *  - configures javac options TODO check this
  *
  * ===Limitations===
  * The conversion does not support:
- *  - plugins, other than `java` and `application`
- *  - packaging, other than jar, pom
- *  - build extensions TODO check this
- *  - build profiles TODO check this
+ *  - plugins, other than `java` and `maven-publish`
+ *  - packaging
+ *  - build variants
  */
 @mill.api.internal
 object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
@@ -149,7 +149,7 @@ case class BuildGenConfig(
     /**
      * @see [[GradleConnector.useDistribution]]
      */
-    @arg(doc = "which Gradle distribution to use to use in the `GradleConnector`")
+    @arg(doc = "which Gradle distribution to use in the `GradleConnector`")
     useDistribution: Option[URI] = None,
     /**
      * @see [[GradleConnector.useBuildDistribution]]

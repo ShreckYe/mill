@@ -4,4 +4,4 @@ plugins {
 }
 
 rootProject.name = "gradle-sample"
-include("app", "list", "utilities")
+include("app", "list", "utilities", "utilities:deeply-nested")
