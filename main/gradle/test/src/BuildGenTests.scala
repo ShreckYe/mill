@@ -24,11 +24,10 @@ object BuildGenTests extends TestSuite with TestBuildGen {
       )
     }
 
-    /*
     test("config") {
       test("all") {
-        val sourceRoot = os.sub / "gradle-samples"
-        val expectedRoot = os.sub / "expected/config/all"
+        val sourceRoot = os.sub / "gradle-sample"
+        val expectedRoot = os.sub / "expected/config/all/gradle-sample"
         assert(
           checkBuild(
             sourceRoot,
@@ -47,6 +46,5 @@ object BuildGenTests extends TestSuite with TestBuildGen {
         )
       }
     }
-     */
   }
 }
