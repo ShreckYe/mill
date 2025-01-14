@@ -1,0 +1,20 @@
+package build.list
+
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+
+object `package` extends RootModule with PublishModule with MavenModule {
+
+  override def pomSettings = PomSettings(
+    "",
+    "fallback.group.for.mill.init",
+    "",
+    Seq(),
+    VersionControl(),
+    Seq()
+  )
+
+  override def publishVersion = "unspecified"
+
+}

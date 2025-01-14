@@ -1,0 +1,25 @@
+package build
+
+import $packages._
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+
+object `package` extends RootModule with PublishModule with MavenModule {
+
+  override def artifactName = "gradle-sample"
+
+  override def pomPackagingType = PackagingType.Pom
+
+  override def pomSettings = PomSettings(
+    "",
+    "fallback.group.for.mill.init",
+    "",
+    Seq(),
+    VersionControl(),
+    Seq()
+  )
+
+  override def publishVersion = "unspecified"
+
+}

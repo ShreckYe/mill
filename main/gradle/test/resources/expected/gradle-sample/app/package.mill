@@ -1,0 +1,24 @@
+package build.app
+
+import mill._
+import mill.javalib._
+import mill.javalib.publish._
+
+object `package` extends RootModule with PublishModule with MavenModule {
+
+  override def runIvyDeps = Agg(ivy"org.apache.commons:commons-text:1.12.0")
+
+  override def runModuleDeps = Seq(build.utilities)
+
+  override def pomSettings = PomSettings(
+    "",
+    "fallback.group.for.mill.init",
+    "",
+    Seq(),
+    VersionControl(),
+    Seq()
+  )
+
+  override def publishVersion = "unspecified"
+
+}
