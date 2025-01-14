@@ -34,7 +34,7 @@ import scala.reflect.io.Path.jfile2path
  * ===Limitations===
  * The conversion does not support:
  *  - plugins, other than `java` and `maven-publish`
- *  - packaging
+ *  - packaging, other than pom
  *  - build variants
  */
 @mill.api.internal
