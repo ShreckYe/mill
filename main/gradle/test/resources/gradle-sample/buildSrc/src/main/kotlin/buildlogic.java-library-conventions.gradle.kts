@@ -38,6 +38,6 @@ publishing {
             }
         }
 
-        create<MavenPublication>("maven2") {}
+        create<MavenPublication>("secondMaven") {}
     }
 }
