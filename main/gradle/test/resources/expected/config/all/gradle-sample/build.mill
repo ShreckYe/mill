@@ -26,21 +26,13 @@ object `package` extends RootModule with MyModule {
 
   }
 
-  object list extends MyModule {
-
-    override def pomPackagingType = PackagingType.Pom
-
-  }
+  object list extends MyModule {}
 
   object utilities extends MyModule {
 
-    override def pomPackagingType = PackagingType.Pom
+    override def moduleDeps = Seq(build.list, build.utilities.`deeply-nested`)
 
-    object `deeply-nested` extends MyModule {
-
-      override def pomPackagingType = PackagingType.Pom
-
-    }
+    object `deeply-nested` extends MyModule {}
   }
 }
 

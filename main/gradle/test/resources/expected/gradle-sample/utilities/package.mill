@@ -6,15 +6,27 @@ import mill.javalib.publish._
 
 object `package` extends RootModule with PublishModule with MavenModule {
 
-  override def pomPackagingType = PackagingType.Pom
+  override def moduleDeps = Seq(build.list, build.utilities.`deeply-nested`)
 
   override def pomSettings = PomSettings(
-    "",
+    "This is a Gradle sample for testing Mill's init command.",
     "dummy.group.from.mill.init.from.gradle",
-    "",
-    Seq(),
-    VersionControl(),
-    Seq()
+    "https://github.com/com-lihaoyi/mill",
+    Seq(License(
+      "The Apache License, Version 2.0",
+      "The Apache License, Version 2.0",
+      "http://www.apache.org/licenses/LICENSE-2.0.txt",
+      false,
+      false,
+      "repo"
+    )),
+    VersionControl(
+      Some("https://github.com/com-lihaoyi/mill"),
+      Some("scm:git:https://github.com/com-lihaoyi/mill.git"),
+      Some("scm:git:https://github.com/com-lihaoyi/mill.git"),
+      Some("HEAD")
+    ),
+    Seq(Developer("johnd", "John Doe", "", None, None))
   )
 
   override def publishVersion = "unspecified"
