@@ -12,7 +12,7 @@ object `package` extends RootModule with PublishModule with MavenModule {
 
   override def pomSettings = PomSettings(
     "",
-    "fallback.group.for.mill.init",
+    "dummy.group.from.mill.init.from.gradle",
     "",
     Seq(),
     VersionControl(),
