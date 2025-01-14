@@ -1,7 +1,7 @@
 allprojects {
     apply(plugin = "maven-publish")
 
-    group = "fallback.group.for.mill.init"
+    group = "dummy.group.from.mill.init.from.gradle"
 
     afterEvaluate {
         extensions.configure<PublishingExtension>("publishing") {
