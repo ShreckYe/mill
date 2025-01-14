@@ -8,6 +8,7 @@ object Deps {
 
   val `org.apache.commons:commons-text` =
     ivy"org.apache.commons:commons-text:1.12.0"
+  val `org.slf4j:slf4j-simple` = ivy"org.slf4j:slf4j-simple:2.0.16"
 }
 
 object `package` extends RootModule with MyModule {
@@ -18,18 +19,28 @@ object `package` extends RootModule with MyModule {
 
   object app extends MyModule {
 
-    override def runIvyDeps = Agg(Deps.`org.apache.commons:commons-text`)
+    override def runIvyDeps =
+      Agg(Deps.`org.apache.commons:commons-text`, Deps.`org.slf4j:slf4j-simple`)
 
     override def runModuleDeps = Seq(build.utilities)
 
   }
 
-  object list extends MyModule {}
+  object list extends MyModule {
+
+    override def pomPackagingType = PackagingType.Pom
+
+  }
 
   object utilities extends MyModule {
 
-    override def moduleDeps = Seq(build.list)
+    override def pomPackagingType = PackagingType.Pom
 
+    object `deeply-nested` extends MyModule {
+
+      override def pomPackagingType = PackagingType.Pom
+
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-package build.list
+package build.utilities.`deeply-nested`
 
 import mill._
 import mill.javalib._

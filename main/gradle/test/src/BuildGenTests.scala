@@ -6,7 +6,7 @@ import utest.{TestSuite, Tests, assert, test}
 object BuildGenTests extends TestSuite with TestBuildGen {
   override def buildFilesSkip(root: Path, path: Path): Boolean = {
     val lastSeg = path.last
-    (lastSeg == ".gradle" || lastSeg == ".kotlin.sessions") ||
+    (lastSeg == ".gradle" || lastSeg == ".kotlin") ||
     (lastSeg == "build" && !path.relativeTo(root).segments.contains("src"))
   }
 
