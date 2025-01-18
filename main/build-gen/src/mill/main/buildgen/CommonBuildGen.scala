@@ -10,23 +10,24 @@ trait CommonBuildGen[Config <: CommonBuildGenConfig] {
   def configParser : ParserForClass[Config]
 
   def main(args: Array[String]): Unit =  {
-    val cfg = configParser.constructOrExit(args.toSeq)
-    run(cfg)
+    val config = configParser.constructOrExit(args.toSeq)
+    run(config)
   }
 
-  type MillNode = Node[BuildObject]
+  type MillCodeNode = Node[BuildCodeObject]
+  type MillCodeTree = Tree[MillCodeNode]
 
   def originalBuildToolName: String
-  def generateMillNodeTree(workspace: Path, cfg: Config): Tree[MillNode]
+  def generateMillCodeTree(workspace: Path, config: Config): MillCodeTree
 
-  private def run(cfg: Config): Unit = {
+  private def run(config: Config): Unit = {
     val workspace = os.pwd
 
     println(s"converting $originalBuildToolName build")
 
-    var output: Tree[MillNode] = generateMillNodeTree(workspace, cfg)
+    var output: MillCodeTree = generateMillCodeTree(workspace, config)
 
-    if (cfg.merge.value) {
+    if (config.merge.value) {
       println("compacting Mill build tree")
       output = output.merge
     }

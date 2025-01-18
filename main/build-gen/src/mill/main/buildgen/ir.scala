@@ -15,15 +15,15 @@ import scala.collection.immutable.{SortedMap, SortedSet}
  * @param outer additional Scala type definitions like base module traits
  */
 @mill.api.experimental
-case class BuildObject(
+case class BuildCodeObject(
     imports: SortedSet[String],
-    companions: BuildObject.Companions,
+    companions: BuildCodeObject.Companions,
     supertypes: Seq[String],
     inner: String,
     outer: String
 )
 @mill.api.experimental
-object BuildObject {
+object BuildCodeObject {
 
   type Constants = SortedMap[String, String]
   type Companions = SortedMap[String, Constants]
@@ -43,7 +43,7 @@ object BuildObject {
     case head +: tail => tail.mkString(s"extends $head with ", " with ", "")
   }
 
-  implicit class NodeOps(private val self: Node[BuildObject]) extends AnyVal {
+  implicit class NodeOps(private val self: Node[BuildCodeObject]) extends AnyVal {
 
     def file: os.RelPath = {
       val name = if (self.dirs.isEmpty) rootBuildFileNames.head else nestedBuildFileNames.head
@@ -52,7 +52,7 @@ object BuildObject {
 
     def source: os.Source = {
       val pkg = self.pkg
-      val BuildObject(imports, companions, supertypes, inner, outer) = self.module
+      val BuildCodeObject(imports, companions, supertypes, inner, outer) = self.module
       val importStatements = imports.iterator.map("import " + _).mkString(linebreak)
       val companionTypedefs = companions.iterator.map {
         case (_, vals) if vals.isEmpty => ""
@@ -82,9 +82,9 @@ object BuildObject {
     }
   }
 
-  implicit class TreeOps(private val self: Tree[Node[BuildObject]]) extends AnyVal {
+  implicit class TreeOps(private val self: Tree[Node[BuildCodeObject]]) extends AnyVal {
 
-    def merge: Tree[Node[BuildObject]] = {
+    def merge: Tree[Node[BuildCodeObject]] = {
       def merge(parentCompanions: Companions, childCompanions: Companions): Companions = {
         var mergedParentCompanions = parentCompanions
 
@@ -101,10 +101,10 @@ object BuildObject {
         mergedParentCompanions
       }
 
-      self.transform[Node[BuildObject]] { (node, subtrees) =>
+      self.transform[Node[BuildCodeObject]] { (node, subtrees) =>
         val isRoot = node.dirs.isEmpty
         var parent = node.module
-        val unmerged = Seq.newBuilder[Tree[Node[BuildObject]]]
+        val unmerged = Seq.newBuilder[Tree[Node[BuildCodeObject]]]
 
         subtrees.iterator.foreach {
           case subtree @ Tree(Node(_ :+ dir, child), Seq()) if child.outer.isEmpty =>

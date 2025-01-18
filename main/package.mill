@@ -154,7 +154,12 @@ object `package` extends RootModule with build.MillStableScalaModule with BuildI
   }
 
   object `build-gen` extends build.MillPublishScalaModule {
-    def moduleDeps = Seq(build.runner)
+    object `intermediate-build-metadata` extends build.MillPublishScalaModule {
+
+      def moduleDeps = Seq(api)
+    }
+
+    def moduleDeps = Seq(build.runner, `intermediate-build-metadata`)
   }
 
   object maven extends build.MillPublishScalaModule {

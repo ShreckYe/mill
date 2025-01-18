@@ -2,7 +2,7 @@ package mill.main.gradle
 
 import mainargs.{Flag, ParserForClass, arg, main}
 import mill.main.buildgen.*
-import mill.main.maven.{CommonMavenPomBuildGen, Modeler}
+import mill.main.maven.Modeler
 import org.apache.commons.lang3.StringUtils
 import org.gradle.tooling.model.{GradleProject, GradleTask}
 import org.gradle.tooling.{ConfigurableLauncher, GradleConnector}
@@ -20,10 +20,18 @@ import scala.reflect.io.Path.jfile2path
  * The conversion
  *  - handles deeply nested modules
  *  - captures project Maven publication metadata
- *  - configures dependencies for configurations for both the main and test source sets:
- *    - `implementation` and `api` (replacements for the deprecated `compile`), similar to Maven's `compile`
- *    - `compileOnly`, similar to Maven's `provided`
- *    - `runtimeOnly`, similar to Maven's `runtime`
+ *  - configures dependencies
+ *    - source sets:
+ *      - main
+ *      - test
+ *    - configurations:
+ *      - `implementation` and `api` (replacements for the deprecated `compile`), similar to Maven's `compile`
+ *      - `compileOnly`, similar to Maven's `provided`
+ *      - `runtimeOnly`, similar to Maven's `runtime`
+ *    - dependency properties:
+ *      - GAV
+ *      - classifier
+ *      - exclude
  *  - configures testing frameworks:
  *    - JUnit 4
  *    - JUnit 5
@@ -38,7 +46,7 @@ import scala.reflect.io.Path.jfile2path
  *  - build variants
  */
 @mill.api.internal
-object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
+object BuildGen extends CommonBuildGen[BuildGenConfig] {
   override def configParser = ParserForClass[BuildGenConfig]
 
   override def originalBuildToolName = "Gradle"
@@ -47,7 +55,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
     "generatePomFileForFallbackMavenForMillInitPublication"
   private val generatePomFileTaskNamePattern = "generatePomFileFor(.+)Publication".r
 
-  override def getMavenNodeTree(workspace: Path, config: BuildGenConfig): Tree[MavenNode] = {
+  override def generateMillCodeTree(workspace: Path, config: BuildGenConfig): Tree[MillCodeNode] = {
     /*
     val newConnector = GradleConnector.newConnector()
 
@@ -107,7 +115,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
         .run()
 
       println("feeding the generated POM files to Maven POM build generation")
-      val modeler = Modeler(config)
+      val modeler = Modeler(??? /*config*/ )
       projectAndTaskTree.map({
         case (project, task) =>
           val generatePomFileTaskNamePattern(capitalizedPublicationName) = task.getName
@@ -123,7 +131,7 @@ object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
 
           Node(
             os.Path(project.getProjectDirectory).relativeTo(workspace).segments,
-            modeler.build(pomPath.jfile)
+            ??? /*modeler.build(pomPath.jfile)*/
           )
       })
     } finally {
@@ -176,7 +184,5 @@ case class BuildGenConfig(
     override val testModule: String = "test",
     override val depsObject: Option[String] = None,
     override val publishProperties: Flag = Flag(),
-    override val merge: Flag = Flag(),
-    override val cacheRepository: Flag = Flag(),
-    override val processPlugins: Flag = Flag()
-) extends mill.main.maven.CommonMavenPomBuildGenConfig
+    override val merge: Flag = Flag()
+) extends CommonBuildGenConfig

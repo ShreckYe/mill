@@ -36,8 +36,8 @@ import scala.jdk.CollectionConverters.*
 @mill.api.internal
 object BuildGen extends CommonMavenPomBuildGen[BuildGenConfig] {
   override def configParser = ParserForClass[BuildGenConfig]
-  override def getMavenNodeTree(workspace: Path, cfg: BuildGenConfig) = {
-    val modeler = Modeler(cfg)
+  override def getMavenNodeTree(workspace: Path, config: BuildGenConfig) = {
+    val modeler = Modeler(config)
     Tree.from(Seq.empty[String]) { dirs =>
       val model = modeler(workspace / dirs)
       (Node(dirs, model), model.getModules.iterator().asScala.map(dirs :+ _))
