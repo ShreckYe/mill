@@ -3,13 +3,12 @@ package build.example
 import scala.util.chaining._
 import coursier.maven.MavenRepository
 import mill._
-import mill.api.JarManifest
 import mill.main.Tasks
 import mill.scalalib._
 import mill.scalalib.api.ZincWorkerUtil
 import mill.scalalib.publish._
 import mill.util.Jvm
-import mill.resolve.SelectMode
+import mill.define.SelectMode
 import mill.contrib.buildinfo.BuildInfo
 import mill.T
 import mill.define.Cross
@@ -148,7 +147,7 @@ object `package` extends RootModule with Module {
       case "publishing" => Some(scalalib.publishing)
       case _ => None
     }
-    val upstreamOpt = upstreamCross(this.millModuleSegments.parts.dropRight(1).last)
+    val upstreamOpt = upstreamCross(this.moduleSegments.parts.dropRight(1).last)
       .flatMap(_.valuesToModules.get(List(crossValue)))
 
     def testRepoRoot = Task {
@@ -214,10 +213,10 @@ object `package` extends RootModule with Module {
 
   trait ExampleCrossModule extends build.integration.IntegrationTestModule {
     // disable scalafix because these example modules don't have sources causing it to misbehave
-    def testRepoSourceRoot: T[PathRef] = Task.Source(millSourcePath)
+    def testRepoSourceRoot: T[PathRef] = Task.Source(moduleDir)
     def testRepoRoot: T[PathRef] = Task { testRepoSourceRoot() }
 
-    def sources0 = Task.Sources(millSourcePath)
+    def sources0 = Task.Sources(moduleDir)
     def sources = Task {
       sources0()
         .flatMap(pathRef => os.walk(pathRef.path))
@@ -246,7 +245,7 @@ object `package` extends RootModule with Module {
 
     def rendered = Task {
       var seenCode = false
-      val examplePath = millSourcePath.subRelativeTo(Task.workspace)
+      val examplePath = moduleDir.subRelativeTo(Task.workspace)
       os.write(
         Task.dest / "example.adoc",
         parsed()
@@ -304,7 +303,7 @@ $txt
     "gatling" -> ("gatling/gatling", "3870fda86e6bca005fbd53108c60a65db36279b6"),
     "arrow" -> ("arrow-kt/arrow", "bc9bf92cc98e01c21bdd2bf8640cf7db0f97204a")
   )
-  object thirdparty extends Cross[ThirdPartyModule](build.listIn(millSourcePath / "thirdparty"))
+  object thirdparty extends Cross[ThirdPartyModule](build.listIn(moduleDir / "thirdparty"))
   trait ThirdPartyModule extends ExampleCrossModule {
     val (repoPath, repoHash) = repoInfo(crossValue)
     def repoSlug = repoPath.split("/").last
