@@ -147,16 +147,8 @@ object SbtBuildGenMain extends BuildGenBase[Project, String, (BuildInfo, Tree[No
           Option.when(dirs.nonEmpty)(dirs.dropRight(1))
         })
 
-    /*
-    TODO This does not support converting child projects nested in a parent directory which is not a project yet.
-     Supporting this may involve refactoring `Node[Project]` into `Node[Option[Project]]`
-     or adding a subproject as a direct child with its ancestor directory project (I am not sure whether this works).
-     */
-    val input = Tree.from(projectNodesByParentDirs(None).head) { node =>
-      val dirs = node.dirs
-      val children = projectNodesByParentDirs.getOrElse(Some(dirs), Seq.empty)
-      (node, children)
-    }
+    val rootProjectNode = projectNodesByParentDirs(None).head
+    val input = Tree(rootProjectNode, (projectNodesByParentDirs.values.flatten.toSet - rootProjectNode).iterator.map(node => Tree(node, Seq.empty)).toSeq)
 
     convertWriteOut(cfg, cfg.shared, (buildExport.defaultBuildInfo, input))
 
