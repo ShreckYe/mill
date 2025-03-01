@@ -68,12 +68,10 @@ object `package` extends RootModule with build.MillPublishScalaModule {
     def testModuleDeps = super.testModuleDeps ++ Seq(build.scalalib)
 
     // I tried moving `Tree` into this module, but it doesn't compile with Scala 2.12.20.
-    /*
     object tree extends Cross[TreeModule](build.Deps.sbtScalaVersion212, build.Deps.scalaVersion)
     trait TreeModule extends build.MillPublishCrossScalaModule {
       def ivyDeps = Agg(build.Deps.upickle)
     }
-     */
   }
   object gradle extends build.MillPublishScalaModule {
     def moduleDeps = Seq(buildgen)
