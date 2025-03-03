@@ -1,0 +1,4 @@
+{
+  "image": "eclipse-temurin:17-windowsservercore",
+  "features": {}
+}
