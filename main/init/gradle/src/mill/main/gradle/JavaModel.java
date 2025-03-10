@@ -95,78 +95,77 @@ public interface JavaModel extends Serializable {
       return new Impl(name, deps);
     }
   }
-  
-    interface Dep extends Serializable {
-        static Dep from(Dependency dep, VersionNumber gradleVersionNumber) {
-            if (dep instanceof ProjectDependency)
-                return ProjectDep.from((ProjectDependency) dep, gradleVersionNumber);
-            else if (dep instanceof ExternalDependency) return ExternalDep.from((ExternalDependency) dep);
-            else throw new IllegalArgumentException("unsupported dependency type: " + dep.getClass());
-        }
+
+  interface Dep extends Serializable {
+    static Dep from(Dependency dep, VersionNumber gradleVersionNumber) {
+      if (dep instanceof ProjectDependency)
+        return ProjectDep.from((ProjectDependency) dep, gradleVersionNumber);
+      else if (dep instanceof ExternalDependency) return ExternalDep.from((ExternalDependency) dep);
+      else throw new IllegalArgumentException("unsupported dependency type: " + dep.getClass());
+    }
+  }
+
+  interface ProjectDep extends Dep {
+    String path();
+
+    class Impl implements ProjectDep {
+      private final String path;
+
+      public Impl(String path) {
+        this.path = path;
+      }
+
+      @Override
+      public String path() {
+        return path;
+      }
     }
 
-    interface ProjectDep extends Dep {
-        String path();
+    static ProjectDep from(ProjectDependency dep, VersionNumber gradleVersionNumber) {
+      //noinspection deprecation
+      return new Impl(
+          gradleVersionNumber.compareTo(VersionNumber.parse("8.11")) >= 0
+              ? dep.getPath()
+              : dep.getDependencyProject().getPath());
+    }
+  }
 
-        class Impl implements ProjectDep {
-            private final String path;
+  interface ExternalDep extends Dep {
+    String group();
 
-            public Impl(String path) {
-                this.path = path;
-            }
+    String name();
 
-            @Override
-            public String path() {
-                return path;
-            }
-        }
+    String version();
 
-        static ProjectDep from(ProjectDependency dep, VersionNumber gradleVersionNumber) {
-            //noinspection deprecation
-            return new Impl(
-                gradleVersionNumber.compareTo(VersionNumber.parse("8.11")) >= 0
-                    ? dep.getPath()
-                    : dep.getDependencyProject().getPath());
-        }
+    class Impl implements ExternalDep {
+      private final String group;
+      private final String name;
+      private final String version;
+
+      public Impl(String group, String name, String version) {
+        this.group = group;
+        this.name = name;
+        this.version = version;
+      }
+
+      @Override
+      public String group() {
+        return group;
+      }
+
+      @Override
+      public String name() {
+        return name;
+      }
+
+      @Override
+      public String version() {
+        return version;
+      }
     }
 
-    interface ExternalDep extends Dep {
-        String group();
-
-        String name();
-
-        String version();
-
-        class Impl implements ExternalDep {
-            private final String group;
-            private final String name;
-            private final String version;
-
-            public Impl(String group, String name, String version) {
-                this.group = group;
-                this.name = name;
-                this.version = version;
-            }
-
-            @Override
-            public String group() {
-                return group;
-            }
-
-            @Override
-            public String name() {
-                return name;
-            }
-
-            @Override
-            public String version() {
-                return version;
-            }
-        }
-
-        static ExternalDep from(ExternalDependency dep) {
-            return new Impl(dep.getGroup(), dep.getName(), dep.getVersion());
-        }
+    static ExternalDep from(ExternalDependency dep) {
+      return new Impl(dep.getGroup(), dep.getName(), dep.getVersion());
     }
-
+  }
 }
