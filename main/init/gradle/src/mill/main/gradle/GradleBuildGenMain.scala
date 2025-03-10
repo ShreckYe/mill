@@ -3,6 +3,7 @@ package mill.main.gradle
 import mainargs.{ParserForClass, arg, main}
 import mill.main.buildgen.*
 import mill.main.buildgen.BuildGenUtil.*
+import mill.main.gradle.JavaModel.{Dep, ExternalDep, ProjectDep}
 import mill.util.Jvm
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.tooling.GradleConnector
@@ -298,7 +299,9 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
       ): Unit = {
         for (dep <- deps.iterator) {
           def printDep(dep: Dep) =
-            println(s"printDep $dep ${dep.getClass} ${dep.isInstanceOf[Dep]} ${dep.isInstanceOf[ExternalDep]} ${dep.isInstanceOf[ExternalDep.Impl]}")
+            println(
+              s"printDep $dep ${dep.getClass} ${dep.isInstanceOf[Dep]} ${dep.isInstanceOf[ExternalDep]} ${dep.isInstanceOf[ExternalDep.Impl]}"
+            )
           printDep(dep)
           printDep(ExternalDep.Impl("a", "b", "c"))
           dep match {
