@@ -3,7 +3,7 @@ package mill.main.gradle
 import mainargs.{ParserForClass, arg, main}
 import mill.main.buildgen.*
 import mill.main.buildgen.BuildGenUtil.*
-import mill.main.gradle.JavaModel.{Dep, ExternalDep, ProjectDep}
+import mill.main.gradle.JavaModel.{Dep, ExternalDep}
 import mill.util.Jvm
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.tooling.GradleConnector
@@ -288,29 +288,19 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
           s"$objName.$depName"
         }
 
-      def throwUnsupportedDep(dep: Dep) = {
-        throw AssertionError(s"unsupported dep $dep")
-      }
-
       def appendIvyDepPackage(
           deps: IterableOnce[Dep],
           onPackage: String => IrScopedDeps,
           onIvy: (String, (String, String, String)) => IrScopedDeps
       ): Unit = {
         for (dep <- deps.iterator) {
-          def printDep(dep: Dep) =
-            println(
-              s"printDep $dep ${dep.getClass} ${dep.isInstanceOf[Dep]} ${dep.isInstanceOf[ExternalDep]} ${dep.isInstanceOf[ExternalDep.Impl]}"
-            )
-          printDep(dep)
-          printDep(ExternalDep.Impl("a", "b", "c"))
-          dep match {
-            case dep: ProjectDep => sd = onPackage(getModuleFqn(dep.path()))
-            case dep: ExternalDep =>
-              val id = groupArtifactVersion(dep)
-              val ivy = ivyDep(dep)
-              sd = onIvy(ivy, id)
-            case dep => throwUnsupportedDep(dep)
+          if (dep.isProjectDepOrExternalDep)
+            sd = onPackage(getModuleFqn(dep.projectDep().path()))
+          else {
+            val externalDep = dep.externalDep()
+            val id = groupArtifactVersion(externalDep)
+            val ivy = ivyDep(externalDep)
+            sd = onIvy(ivy, id)
           }
         }
       }
@@ -353,9 +343,9 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
                 else sd.copy(testIvyDeps = sd.testIvyDeps + v)
             )
             config.deps.forEach(dep =>
-              if (hasTest && sd.testModule.isEmpty && dep.isInstanceOf[ExternalDep])
+              if (hasTest && sd.testModule.isEmpty && !dep.isProjectDepOrExternalDep)
                 sd = sd.copy(testModule =
-                  testModulesByGroup.get(dep.asInstanceOf[ExternalDep].group())
+                  testModulesByGroup.get(dep.externalDep().group())
                 )
             )
 
@@ -368,11 +358,10 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
 
           case name =>
             config.deps.forEach { dep =>
-              val depString = dep match {
-                case dep: ProjectDep => escape(dep.path())
-                case dep: ExternalDep => groupArtifactVersion(dep)
-                case dep => throwUnsupportedDep(dep)
-              }
+              val depString = if (dep.isProjectDepOrExternalDep)
+                escape(dep.projectDep().path())
+              else
+                groupArtifactVersion(dep.externalDep()).toString()
               println(s"ignoring $name dependency $depString")
             }
         }

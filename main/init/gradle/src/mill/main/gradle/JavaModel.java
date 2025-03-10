@@ -3,7 +3,9 @@ package mill.main.gradle;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
@@ -91,21 +93,68 @@ public interface JavaModel extends Serializable {
       String name = conf.getName();
       List<Dep> deps = conf.getDependencies().stream()
           .map(dep -> Dep.from(dep, gradleVersionNumber))
+          .filter(Objects::nonNull)
           .collect(Collectors.toList());
       return new Impl(name, deps);
     }
   }
 
+  /*
+  Serializing `ProjectDep`s and `ExternalDep`s as subtypes of `Dep`
+  in a shared `List<Dep>` doesn't work well with serialization.
+  `instanceOf`/`isInstanceOf` checks on the deserialized objects don't work as expected.
+  */
   interface Dep extends Serializable {
-    static Dep from(Dependency dep, VersionNumber gradleVersionNumber) {
+    boolean isProjectDepOrExternalDep();
+
+    ProjectDep projectDep();
+
+    ExternalDep externalDep();
+
+    class Impl implements Dep {
+      private final ProjectDep projectDep;
+      private final ExternalDep externalDep;
+
+      public Impl(ProjectDep projectDep) {
+        this.projectDep = projectDep;
+        this.externalDep = null;
+      }
+
+      public Impl(ExternalDep externalDep) {
+        this.projectDep = null;
+        this.externalDep = externalDep;
+      }
+
+      @Override
+      public boolean isProjectDepOrExternalDep() {
+        return projectDep != null;
+      }
+
+      @Override
+      public ProjectDep projectDep() {
+        return projectDep;
+      }
+
+      @Override
+      public ExternalDep externalDep() {
+        return externalDep;
+      }
+    }
+
+    static @Nullable Dep from(Dependency dep, VersionNumber gradleVersionNumber) {
       if (dep instanceof ProjectDependency)
-        return ProjectDep.from((ProjectDependency) dep, gradleVersionNumber);
-      else if (dep instanceof ExternalDependency) return ExternalDep.from((ExternalDependency) dep);
-      else throw new IllegalArgumentException("unsupported dependency type: " + dep.getClass());
+        return new Impl(ProjectDep.from((ProjectDependency) dep, gradleVersionNumber));
+      else if (dep instanceof ExternalDependency)
+        return new Impl(ExternalDep.from((ExternalDependency) dep));
+      else {
+        System.out.println(
+            "Gradle dependency " + dep + " with unsupported type " + dep.getClass() + " dropped");
+        return null;
+      }
     }
   }
 
-  interface ProjectDep extends Dep {
+  interface ProjectDep extends Serializable /*extends Dep*/ {
     String path();
 
     class Impl implements ProjectDep {
@@ -130,7 +179,7 @@ public interface JavaModel extends Serializable {
     }
   }
 
-  interface ExternalDep extends Dep {
+  interface ExternalDep extends Serializable /*extends Dep*/ {
     String group();
 
     String name();
