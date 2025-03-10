@@ -3,6 +3,7 @@ package mill.main.gradle;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -64,16 +65,19 @@ public interface JavaModel extends Serializable {
 
     String name();
 
-    List<Dep> deps();
+    List<ProjectDep> projectDeps();
+    List<ExternalDep> externalDeps();
 
     class Impl implements Config {
 
       private final String config;
-      private final List<Dep> deps;
+      private final List<ProjectDep> projectDeps;
+      private final List<ExternalDep> externalDeps;
 
-      public Impl(String config, List<Dep> deps) {
+      public Impl(String config, List<ProjectDep> projectDeps, List<ExternalDep> externalDeps) {
         this.config = config;
-        this.deps = deps;
+        this.projectDeps = projectDeps;
+        this.externalDeps = externalDeps;
       }
 
       @Override
@@ -82,30 +86,38 @@ public interface JavaModel extends Serializable {
       }
 
       @Override
-      public List<Dep> deps() {
-        return deps;
+      public List<ProjectDep> projectDeps() {
+        return projectDeps;
+      }
+      @Override
+      public List<ExternalDep> externalDeps(){
+          return externalDeps;
       }
     }
 
-    static Config from(Configuration conf, VersionNumber gradleVersionNumber) {
-      String name = conf.getName();
-      List<Dep> deps = conf.getDependencies().stream()
-          .map(dep -> Dep.from(dep, gradleVersionNumber))
-          .collect(Collectors.toList());
-      return new Impl(name, deps);
-    }
+      static Config from(Configuration conf, VersionNumber gradleVersionNumber) {
+          String name = conf.getName();
+
+          Map<Boolean, List<Dependency>> partitioned = conf.getDependencies().stream()
+              .collect(Collectors.partitioningBy(dep -> {
+                  if (dep instanceof ProjectDependency)
+                      return false;
+                  else if (dep instanceof ExternalDependency) return true;
+                  else throw new IllegalArgumentException("unsupported dependency type: " + dep.getClass());
+              }))
+
+          return new Impl(name,
+              partitioned.get(false).stream().map(dep -> ProjectDep.from((ProjectDependency) dep, gradleVersionNumber)).toList(),
+              partitioned.get(true).stream().map(dep -> ExternalDep.from((ExternalDependency) dep)).toList());
+      }
   }
 
-  interface Dep extends Serializable {
-    static Dep from(Dependency dep, VersionNumber gradleVersionNumber) {
-      if (dep instanceof ProjectDependency)
-        return ProjectDep.from((ProjectDependency) dep, gradleVersionNumber);
-      else if (dep instanceof ExternalDependency) return ExternalDep.from((ExternalDependency) dep);
-      else throw new IllegalArgumentException("unsupported dependency type: " + dep.getClass());
-    }
-  }
-
-  interface ProjectDep extends Dep {
+  /*
+  Serializing `ProjectDep`s and `ExternalDep`s as subtypes of `Dep` in a shared `List<Dep>` doesn't work well with serialization.
+  `instanceOf`/`isInstanceOf` checks on the deserialized objects don't work as expected.
+  */
+    
+  interface ProjectDep /*extends Dep*/ {
     String path();
 
     class Impl implements ProjectDep {
@@ -130,7 +142,7 @@ public interface JavaModel extends Serializable {
     }
   }
 
-  interface ExternalDep extends Dep {
+  interface ExternalDep /*extends Dep*/ {
     String group();
 
     String name();
