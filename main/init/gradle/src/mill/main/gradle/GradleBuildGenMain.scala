@@ -40,7 +40,7 @@ import scala.jdk.CollectionConverters.*
  *  - non-Java sources
  */
 @mill.api.internal
-object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, JavaModel.Dep] {
+object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep] {
   override type C = Config
 
   def main(args: Array[String]): Unit = {
@@ -148,17 +148,16 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Java
     IrBaseInfo(typedef)
   }
 
-  // TODO `Unit` when the code is refactored to use `ProjectDependency`
-  override type ModuleFqnMap = Map[(String, String, String), String]
+  override type ModuleFqnMap = Map[String, String]
   override def getModuleFqnMap(moduleNodes: Seq[Node[ProjectModel]])
-      : Map[(String, String, String), String] =
-    buildModuleFqnMap(moduleNodes)(getGav)
+      : ModuleFqnMap =
+    buildModuleFqnMap(moduleNodes)(_.path())
 
   override def extractIrBuild(
       cfg: Config,
       // baseInfo: IrBaseInfo,
       build: Node[ProjectModel],
-      moduleFqnMap: Map[(String, String, String), String]
+      moduleFqnMap: ModuleFqnMap
   ): IrBuild = {
     val project = build.value
     val scopedDeps = extractScopedDeps(project, moduleFqnMap, cfg)
@@ -212,7 +211,7 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Java
       }.toSeq.flatten
 
   // TODO remove when the code is refactored to use `ProjectDependency`
-  def groupArtifactVersion(dep: JavaModel.Dep): (String, String, String) =
+  def groupArtifactVersion(dep: ExternalDep): (String, String, String) =
     (dep.group(), dep.name(), dep.version())
 
   def getJavacOptions(project: ProjectModel): Seq[String] = {
@@ -246,7 +245,7 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Java
       case version => version
     }
 
-  def interpIvy(dep: JavaModel.Dep): String = {
+  def interpIvy(dep: ExternalDep): String = {
     BuildGenUtil.renderIvyString(dep.group(), dep.name(), version = dep.version())
   }
 
@@ -274,31 +273,41 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Java
   // TODO consider renaming to `extractConfigurationDeps` as Gradle calls them configurations instead of scopes
   def extractScopedDeps(
       project: ProjectModel,
-      packages: PartialFunction[(String, String, String), String],
+      getModuleFqn: PartialFunction[String, String],
       cfg: Config
   ): IrScopedDeps = {
     var sd = IrScopedDeps()
     val hasTest = os.exists(os.Path(project.directory()) / "src/test")
     val _java = project._java()
     if (null != _java) {
-      val ivyDep: JavaModel.Dep => String =
+      val ivyDep: ExternalDep => String =
         cfg.shared.basicConfig.depsObject.fold(interpIvy(_)) { objName => dep =>
           val depName = s"`${dep.group()}:${dep.name()}`"
           sd = sd.copy(namedIvyDeps = sd.namedIvyDeps :+ (depName, interpIvy(dep)))
           s"$objName.$depName"
         }
 
+      def throwUnsupportedDep(dep: Dep) = {
+        throw AssertionError(s"unsupported dep $dep")
+      }
+
       def appendIvyDepPackage(
-          deps: IterableOnce[JavaModel.Dep],
+          deps: IterableOnce[Dep],
           onPackage: String => IrScopedDeps,
           onIvy: (String, (String, String, String)) => IrScopedDeps
       ): Unit = {
         for (dep <- deps.iterator) {
-          val id = groupArtifactVersion(dep)
-          if (packages.isDefinedAt(id)) sd = onPackage(packages(id))
-          else {
-            val ivy = ivyDep(dep)
-            sd = onIvy(ivy, id)
+          def printDep(dep: Dep) =
+            println(s"printDep $dep ${dep.getClass} ${dep.isInstanceOf[Dep]} ${dep.isInstanceOf[ExternalDep]} ${dep.isInstanceOf[ExternalDep.Impl]}")
+          printDep(dep)
+          printDep(ExternalDep.Impl("a", "b", "c"))
+          dep match {
+            case dep: ProjectDep => sd = onPackage(getModuleFqn(dep.path()))
+            case dep: ExternalDep =>
+              val id = groupArtifactVersion(dep)
+              val ivy = ivyDep(dep)
+              sd = onIvy(ivy, id)
+            case dep => throwUnsupportedDep(dep)
           }
         }
       }
@@ -340,11 +349,12 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Java
                 if (isBom(id)) sd.copy(testBomIvyDeps = sd.testBomIvyDeps + v)
                 else sd.copy(testIvyDeps = sd.testIvyDeps + v)
             )
-            config.deps.forEach { dep =>
-              if (hasTest && sd.testModule.isEmpty) {
-                sd = sd.copy(testModule = testModulesByGroup.get(dep.group()))
-              }
-            }
+            config.deps.forEach(dep =>
+              if (hasTest && sd.testModule.isEmpty && dep.isInstanceOf[ExternalDep])
+                sd = sd.copy(testModule =
+                  testModulesByGroup.get(dep.asInstanceOf[ExternalDep].group())
+                )
+            )
 
           case TEST_COMPILE_ONLY_CONFIGURATION_NAME =>
             appendIvyDepPackage(
@@ -355,8 +365,12 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Java
 
           case name =>
             config.deps.forEach { dep =>
-              val id = groupArtifactVersion(dep)
-              println(s"ignoring $name dependency $id")
+              val depString = dep match {
+                case dep: ProjectDep => escape(dep.path())
+                case dep: ExternalDep => groupArtifactVersion(dep)
+                case dep => throwUnsupportedDep(dep)
+              }
+              println(s"ignoring $name dependency $depString")
             }
         }
       }
