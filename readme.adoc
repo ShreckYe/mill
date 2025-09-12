@@ -1,3 +1,5 @@
+**This is a branch created to be set as the default branch of my fork to make `copilot-setup-steps.yml` work.**
+
 = image:website/docs/logo.svg[Mill Logo] Mill: A Better Build Tool for Java, Scala, & Kotlin
 :idprefix:
 :idseparator: -
@@ -86,5 +88,3 @@ Test run foo.FooTest finished: 0 failed, 0 ignored, 2 total, ...
 
 * link:developer.adoc[Developer Documentation]
 * link:changelog.adoc[Changelog]
-
-
