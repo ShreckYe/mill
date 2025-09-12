@@ -51,7 +51,7 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
       val hasJavaPlugin = project._java() != null
       val hasChildren = children.nonEmpty
       val hasSourceCode = os.exists(os.Path(project.directory()) / "src")
-      
+
       // Include projects that have the Java plugin, or serve as organizational containers,
       // or have source code that might be compilable
       if (hasJavaPlugin || hasChildren || hasSourceCode) {
