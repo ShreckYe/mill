@@ -45,6 +45,22 @@ import scala.jdk.CollectionConverters.*
 object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep] {
   override type C = Config
 
+  override def getModuleTree(input: Tree[Node[ProjectModel]]): Tree[Node[Option[ProjectModel]]] =
+    input.transform { (node, children) =>
+      val project = node.value
+      val hasJavaPlugin = project._java() != null
+      val hasChildren = children.nonEmpty
+      val hasSourceCode = os.exists(os.Path(project.directory()) / "src")
+      
+      // Include projects that have the Java plugin, or serve as organizational containers,
+      // or have source code that might be compilable
+      if (hasJavaPlugin || hasChildren || hasSourceCode) {
+        Tree(node.copy(value = Some(project)), children.iterator.toSeq)
+      } else {
+        Tree(node.copy(value = None), children.iterator.toSeq)
+      }
+    }
+
   def main(args: Array[String]): Unit = {
     val cfg = ParserForClass[Config].constructOrExit(args.toSeq)
     run(cfg)
