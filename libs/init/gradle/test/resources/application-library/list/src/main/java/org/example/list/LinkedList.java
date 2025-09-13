@@ -30,7 +30,7 @@ public class LinkedList {
         Node previousIt = null;
         Node it = null;
         for (it = head; !result && it != null; previousIt = it, it = it.next) {
-            if (0 == element.compareTo(it.data)) {
+            if (element.compareTo(it.data) == 0) {
                 result = true;
                 unlink(previousIt, it);
                 break;
