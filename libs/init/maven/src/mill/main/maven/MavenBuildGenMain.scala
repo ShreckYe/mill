@@ -59,6 +59,9 @@ object MavenBuildGenMain extends BuildGenBase.MavenAndGradle[Model, Dependency] 
 
     println("converted Maven build to Mill")
   }
+  
+  override def getModuleTree(input: Tree[Node[Model]]): Tree[Node[Option[Model]]] =
+    input.map(node => node.copy(value = Some(node.value)))
 
   override def getBaseInfo(
       input: Tree[Node[Model]],

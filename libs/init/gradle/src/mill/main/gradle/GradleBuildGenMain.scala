@@ -108,6 +108,14 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
     file
   }
 
+  override def getModuleTree(input: Tree[Node[ProjectModel]]): Tree[Node[Option[ProjectModel]]] =
+    input.map(node =>
+      node.copy(value = {
+        val projectModel = node.value
+        Option.when(projectModel._java() != null)(projectModel)
+      })
+    )
+
   override def getBaseInfo(
       input: Tree[Node[ProjectModel]],
       cfg: Config,
@@ -217,6 +225,7 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
 
   def getJavacOptions(project: ProjectModel): Seq[String] = {
     val _java = project._java()
+    // TODO This `if` can not be removed because this function is called in `getBaseInfo` too.
     if (_java == null) Seq.empty
     else _java.javacOptions().asScala.toSeq
   }
@@ -278,6 +287,7 @@ object GradleBuildGenMain extends BuildGenBase.MavenAndGradle[ProjectModel, Dep]
     var sd = IrScopedDeps()
     val hasTest = os.exists(os.Path(project.directory()) / "src/test")
     val _java = project._java()
+    // TODO This `if` can be removed, but the integration tests fail anyway. (see the blamed commit message of this line for more)
     if (_java != null) {
       val mvnDep: ExternalDep => String =
         cfg.shared.basicConfig.depsObject.fold(interpMvn(_)) { objName => dep =>
